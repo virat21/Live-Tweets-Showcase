@@ -1,0 +1,47 @@
+.Tweet{
+    margin:10px;
+    padding:10px;
+    box-shadow:0px 5px 5px rgba(0,0,0,0.1);
+    border-radius:5px;
+    background-color: #fff;
+}
+
+.Tweet .user{
+    margin-bottom:10px;
+    display: flex;
+    align-items: center;
+}
+.Tweet .user img{
+    width:30px;
+    height: 30px;
+    border-radius:15px;
+    overflow: hidden;
+    margin-right:10px;
+}
+.Tweet .user .userfullname{
+    font-size:15px;
+    text-overflow: ellipsis;
+}
+.Tweet .user .username{
+    font-size:12px;
+    color:#222;
+    font-weight: bold;
+}
+
+.Tweet .media{
+    display:flex;
+    justify-content: center;
+   
+    /* height:300px; */
+}
+
+.Tweet .media img{
+    object-fit: contain;
+    border-radius:5px;
+    overflow: hidden;
+}
+
+.Tweet .tweettext{
+    font-size:15px;
+    margin-bottom:10px;
+}

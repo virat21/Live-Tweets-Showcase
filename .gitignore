@@ -1,0 +1,8 @@
+
+package-lock.json
+node_modules
+.vscode
+.history
+temp.js
+twitterstatsapp/package-lock.json
+twitterstatsapp/node_modules
