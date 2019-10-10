@@ -1,5 +1,6 @@
 {
     "PORT":3001,
     "allowReTweets":true,
-    "hashTags":"#GDGAhmedabad,#DevFestAhm,#GDGFest"
+    "hashTags":"#GDGAhmedabad,#DevFestAhm,#DevFest",
+    "resetPassword":"devfest"
 }

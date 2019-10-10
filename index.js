@@ -1,5 +1,6 @@
 const CONFIG = require("./appConfig.json");
 let isReTweetAllowed = CONFIG.allowReTweets;
+let resetPassword = CONFIG.resetPassword;
 let fs = require("fs");
 var express = require("express");
 var cors = require("cors");
@@ -40,10 +41,36 @@ let storageQ = [];
 app.get("/tweets", (req, res) => {
   res.send({
     tweets: storageData.slice(
-      Math.max(storageData.length - 5, 0)
+      Math.max(storageData.length - 10, 0)
     ),
     users: usersData,
     totalTweets: storageData.length
+  });
+});
+
+app.get("/reset/" + resetPassword, (req, res) => {
+  storageData = [];
+  usersData = {};
+  fs.writeFile(stragePath, JSON.stringify([]));
+  res.send({
+    status: true,
+    msg: "all data has been reset"
+  });
+});
+
+app.get("/allowRetweet/:params", (req, res) => {
+  isReTweetAllowed =
+    req.params.params == "yes" ? true : false;
+  res.send({
+    status: true,
+    msg: "Retweet set to " + isReTweetAllowed
+  });
+});
+
+app.get("/retweetStatus", (req, res) => {
+  res.send({
+    status: true,
+    msg: "Retweet = " + isReTweetAllowed
   });
 });
 

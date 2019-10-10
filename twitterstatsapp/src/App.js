@@ -6,7 +6,7 @@ import LiveTweets from "./components/LiveTweets/LiveTweets";
 import TopUsers from "./components/TopUsers/TopUsers";
 import bg from "./bg.png";
 
-let SERVER_URL = "http://localhost:3001";
+let SERVER_URL = "http://13.127.76.197:3001";
 
 export let socket = io(SERVER_URL);
 
