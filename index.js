@@ -1,3 +1,5 @@
+const CONFIG = require("./appConfig.json");
+let isReTweetAllowed = CONFIG.allowReTweets;
 let fs = require("fs");
 var express = require("express");
 var cors = require("cors");
@@ -10,31 +12,59 @@ app.use(
   express.static("./twitterstatsapp/build")
 );
 
-let hashtag =
-  "#devfest19,#gdgrajkot,#devfestrajkot,#wtmrajkot";
+let hashtag = CONFIG.hashTags;
 let stragePath = "./storage/storage.json";
+let usersPath = "./storage/users.json";
 let storageData = JSON.parse(
   fs.readFileSync(stragePath).toString()
+);
+
+let usersData = JSON.parse(
+  fs.readFileSync(usersPath).toString()
 );
 
 var client = new Twitter(
   require("./twitterConfig.json")
 );
 
-console.log(storageData.length, "preload tweets");
+console.log(
+  storageData.length,
+  "preloaded tweets"
+);
+console.log(
+  Object.keys(usersData).length,
+  "preloaded users"
+);
 let storageQ = [];
 
 app.get("/tweets", (req, res) => {
-  res.send(storageData);
+  res.send({
+    tweets: storageData.slice(
+      Math.max(storageData.length - 5, 0)
+    ),
+    users: usersData,
+    totalTweets: storageData.length
+  });
+});
+
+app.get("/reloadAll", (req, res) => {
+  io.to("commands").emit("reload", {
+    status: true
+  });
+  res.send({
+    status: true,
+    msg: "Reloading All Browsers"
+  });
 });
 
 io.on("connection", function(socket) {
   console.log("a user connected");
   socket.join("tweets");
+  socket.join("commands");
 });
 
-http.listen(3001, function() {
-  console.log("listening on *:3001");
+http.listen(CONFIG.PORT, function() {
+  console.log("listening on *:" + CONFIG.PORT);
 });
 
 client.stream(
@@ -45,16 +75,24 @@ client.stream(
       //console.log(event);
       if (
         event.text[0] === "R" &&
-        event.text[1] === "T"
+        event.text[1] === "T" &&
+        event.text[2] === " "
       ) {
-        // this prevent retweeted from counts
-        return;
+        if (!isReTweetAllowed) return;
+      }
+      if (event.user.id_str in usersData) {
+        usersData[event.user.id_str]
+          .totalTweets++;
+      } else {
+        event.user.totalTweets = 1;
+        usersData[event.user.id_str] = event.user;
       }
       io.to("tweets").emit("tweet", event);
       storageQ.push(event);
     });
 
     stream.on("error", function(error) {
+      console.log(error);
       throw error;
     });
   }
@@ -91,3 +129,20 @@ let StorageLoop = () => {
 
 StorageLoop();
 // Storage Queue
+
+let StoreUserDetails = () => {
+  setTimeout(() => {
+    fs.writeFile(
+      usersPath,
+      JSON.stringify(usersData),
+      (e, d) => {
+        if (!e) {
+          console.log("Users Details Stored");
+        }
+        StoreUserDetails();
+      }
+    );
+  }, 5000);
+};
+StoreUserDetails();
+//Storing Users

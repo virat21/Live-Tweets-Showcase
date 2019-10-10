@@ -6,7 +6,7 @@ import LiveTweets from "./components/LiveTweets/LiveTweets";
 import TopUsers from "./components/TopUsers/TopUsers";
 import bg from "./bg.png";
 
-let SERVER_URL = "example.com:3000";
+let SERVER_URL = "http://localhost:3001";
 
 export let socket = io(SERVER_URL);
 
@@ -16,7 +16,8 @@ class App extends React.Component {
 
     this.state = {
       tweets: [],
-      users: {}
+      users: {},
+      totalTweets: 0
     };
 
     this.loadTweets = [];
@@ -25,10 +26,13 @@ class App extends React.Component {
       this
     );
 
+    this.listenCommands = this.listenCommands.bind(
+      this
+    );
+
     this.bulkLoadTweets = this.bulkLoadTweets.bind(
       this
     );
-    this.oldTweets = 0;
   }
 
   bulkLoadTweets() {
@@ -43,15 +47,8 @@ class App extends React.Component {
         s => {
           _tweets.map((d, i) => {
             if (d.user.id_str in s.users) {
-              if (
-                !(
-                  d.text[0] === "R" &&
-                  d.text[1] === "T"
-                )
-              ) {
-                s.users[d.user.id_str]
-                  .totalTweets++;
-              }
+              s.users[d.user.id_str]
+                .totalTweets++;
             } else {
               d.user.totalTweets = 1;
               s.users[d.user.id_str] = d.user;
@@ -73,7 +70,7 @@ class App extends React.Component {
         }
       );
     } else {
-      console.log("no tweets");
+      //  console.log("no tweets");
       setTimeout(() => {
         this.bulkLoadTweets();
       }, 100);
@@ -83,61 +80,32 @@ class App extends React.Component {
   listenTweets() {
     socket.on("tweet", e => {
       this.loadTweets.push(e);
+    });
+  }
 
-      // this.setState(s => {
-      //   // s.tweets = [e, ...s.tweets];
-      //   s.tweets.push(e);
-      //   //console.log(e);
-      //   if (e.user.id_str in s.users) {
-      //     s.users[e.user.id_str].totalTweets++;
-      //   } else {
-      //     e.user.totalTweets = 1;
-      //     s.users[e.user.id_str] = e.user;
-      //   }
-      //   return {
-      //     tweets: s.tweets,
-      //     users: s.users
-      //   };
-      // });
+  listenCommands() {
+    socket.on("reload", e => {
+      document.location.reload();
     });
   }
 
   componentDidMount() {
     fetch(`${SERVER_URL}/tweets`)
       .then(res => {
-        res.json().then(tweets => {
-          console.log(tweets.length, "tweets");
-          let users = {};
-          tweets.map((d, i) => {
-            if (d.user.id_str in users) {
-              if (
-                !(
-                  d.text[0] === "R" &&
-                  d.text[1] === "T"
-                )
-              )
-                users[d.user.id_str]
-                  .totalTweets++;
-            } else {
-              d.user.totalTweets = 1;
-              users[d.user.id_str] = d.user;
-            }
-          });
-          this.oldTweets = tweets.length;
-          this.setState(
-            { tweets: [], users },
-            () => {
-              console.log("load tweets");
+        res.json().then(data => {
+          console.log(data, "data from api");
 
-              this.bulkLoadTweets();
-            }
-          );
+          this.setState(data, () => {
+            console.log("tweets loaded tweets");
+            this.bulkLoadTweets();
+          });
         });
       })
       .catch(res => {
         console.log(res);
       });
     this.listenTweets();
+    this.listenCommands();
   }
 
   render() {
@@ -159,7 +127,7 @@ class App extends React.Component {
           <div className="totalNumber">
             Total Tweets{" "}
             {this.state.tweets.length +
-              this.oldTweets}
+              this.state.totalTweets}
           </div>
           <LiveTweets data={this.state.tweets} />
         </div>

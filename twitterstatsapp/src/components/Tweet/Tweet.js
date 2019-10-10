@@ -1,45 +1,92 @@
 import React, { Component } from "react";
 import "./tweet.css";
 export default class Tweet extends Component {
-  renderImgs(tweet) {
+  renderVideo(media) {
+    var maxWidth = 260;
+    var maxHeight = 260;
+    var ratio = 0;
+    var width = media.aspect_ratio[0];
+    var height = media.aspect_ratio[1];
+
+    if (width > maxWidth) {
+      ratio = maxWidth / width;
+      height = height * ratio;
+      width = width * ratio;
+    }
+
+    if (height > maxHeight) {
+      ratio = maxHeight / height;
+
+      width = width * ratio;
+      height = height * ratio;
+    }
+    let video = media.variants[0];
+    if (!video) return null;
+
+    return (
+      <video
+        autoPlay
+        muted
+        loop
+        width={width}
+        height={height}
+      >
+        <source
+          src={video.url}
+          type="video/mp4"
+        />
+      </video>
+    );
+  }
+
+  renderImage(media) {
+    var maxWidth = 260;
+    var maxHeight = 260;
+    var ratio = 0;
+    var width = media.sizes.large.w;
+    var height = media.sizes.large.h;
+
+    if (width > maxWidth) {
+      ratio = maxWidth / width;
+      height = height * ratio;
+      width = width * ratio;
+    }
+
+    if (height > maxHeight) {
+      ratio = maxHeight / height;
+
+      width = width * ratio;
+      height = height * ratio;
+    }
+
+    return (
+      <img
+        width={width}
+        height={height}
+        src={media.media_url}
+        alt="some alt"
+      />
+    );
+  }
+  renderMedia(tweet) {
     if (tweet.extended_entities) {
       if (tweet.extended_entities.media) {
-        return (
-          <div className="media">
-            {tweet.extended_entities.media.map(
-              (media, index) => {
-                var maxWidth = 260;
-                var maxHeight = 260;
-                var ratio = 0;
-                var width = media.sizes.large.w;
-                var height = media.sizes.large.h;
-
-                if (width > maxWidth) {
-                  ratio = maxWidth / width;
-                  height = height * ratio;
-                  width = width * ratio;
-                }
-
-                if (height > maxHeight) {
-                  ratio = maxHeight / height;
-
-                  width = width * ratio;
-                  height = height * ratio;
-                }
-
-                return (
-                  <img
-                    width={width}
-                    height={height}
-                    key={index}
-                    src={media.media_url}
-                    alt={index}
-                  />
-                );
-              }
-            )}
-          </div>
-        );
+        if (
+          tweet.extended_entities.media.length
+        ) {
+          let media =
+            tweet.extended_entities.media[0];
+          let hasVideo = "video_info" in media;
+          return (
+            <div className="media">
+              {hasVideo
+                ? this.renderVideo(
+                    media.video_info
+                  )
+                : this.renderImage(media)}
+            </div>
+          );
+        }
       }
     }
 
@@ -66,7 +113,7 @@ export default class Tweet extends Component {
         <div className="tweettext">
           {tweet.text}
         </div>
-        {this.renderImgs(tweet)}
+        {this.renderMedia(tweet)}
       </div>
     );
   }
