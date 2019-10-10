@@ -1,6 +1,6 @@
 const CONFIG = require("./appConfig.json");
 let isReTweetAllowed = CONFIG.allowReTweets;
-let resetPassword = CONFIG.resetPassword;
+let password = CONFIG.password;
 let fs = require("fs");
 var express = require("express");
 var cors = require("cors");
@@ -16,12 +16,17 @@ app.use(
 let hashtag = CONFIG.hashTags;
 let stragePath = "./storage/storage.json";
 let usersPath = "./storage/users.json";
+let blockUsersPath = "./storage/blockUsers.json";
 let storageData = JSON.parse(
   fs.readFileSync(stragePath).toString()
 );
 
 let usersData = JSON.parse(
   fs.readFileSync(usersPath).toString()
+);
+
+let blockUsersData = JSON.parse(
+  fs.readFileSync(blockUsersPath).toString()
 );
 
 var client = new Twitter(
@@ -48,7 +53,7 @@ app.get("/tweets", (req, res) => {
   });
 });
 
-app.get("/reset/" + resetPassword, (req, res) => {
+app.get("/reset/" + password, (req, res) => {
   storageData = [];
   usersData = {};
   fs.writeFile(stragePath, JSON.stringify([]));
@@ -73,6 +78,36 @@ app.get("/retweetStatus", (req, res) => {
     msg: "Retweet = " + isReTweetAllowed
   });
 });
+
+app.get("/blockList", (req, res) => {
+  res.send(blockUsersData);
+});
+
+app.get(
+  "/blockUser/:username/" + password,
+  (req, res) => {
+    console.log(req.params.username, "yes");
+    if (
+      !isBlock({
+        user: { screen_name: req.params.username }
+      })
+    ) {
+      blockUsersData.push(req.params.username);
+    }
+    res.send(blockUsersData);
+  }
+);
+
+app.get(
+  "/unblockUser/:username/" + password,
+  (req, res) => {
+    blockUsersData = blockUsersData.filter(
+      d => d !== req.params.username
+    );
+
+    res.send(blockUsersData);
+  }
+);
 
 app.get("/reloadAll", (req, res) => {
   io.to("commands").emit("reload", {
@@ -100,6 +135,9 @@ client.stream(
   function(stream) {
     stream.on("data", function(event) {
       //console.log(event);
+      if (isBlock(event)) {
+        return;
+      }
       if (
         event.text[0] === "R" &&
         event.text[1] === "T" &&
@@ -173,3 +211,30 @@ let StoreUserDetails = () => {
 };
 StoreUserDetails();
 //Storing Users
+
+let StoreBlockUserDetails = () => {
+  setTimeout(() => {
+    fs.writeFile(
+      blockUsersPath,
+      JSON.stringify(blockUsersData),
+      (e, d) => {
+        if (!e) {
+          console.log(
+            "Block Users Details Stored"
+          );
+        }
+        StoreBlockUserDetails();
+      }
+    );
+  }, 5000);
+};
+StoreBlockUserDetails();
+//Storing Users
+
+let isBlock = event => {
+  return (
+    blockUsersData.indexOf(
+      event.user.screen_name.toLocaleLowerCase()
+    ) >= 0
+  );
+};
